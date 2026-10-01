@@ -102,6 +102,21 @@ void ST7796_Draw_Image_Monochrome (unsigned char * ptr, unsigned short y1, unsig
 void ST7796_Draw_Image_Monochrome1 (unsigned char * ptr, unsigned short y1, unsigned short y2);
 void ST7796_Draw_Image_Rgb565 (unsigned char * ptr, unsigned short x1, unsigned short y1, unsigned short sizex, unsigned short sizey);
 void ST7796_Draw_Image_By_Pixel (unsigned char * ptr, unsigned short xsize, unsigned short ysize);
+void ST7796_Draw_Image_Rgb565_Mem (unsigned char * ptr,
+				   unsigned short x1,
+				   unsigned short y1,
+				   unsigned short sizex,
+				   unsigned short sizey);
+
+void ST7796_Check_Image_Mem3 (unsigned char * pmem,
+			      unsigned char * pflash,
+			      unsigned short sizex,
+			      unsigned short sizey);
+
+void ST7796_Check_Mem4 (unsigned char * pmem,
+			unsigned char * pflash,
+			unsigned short size_cmp);
+
 
 #endif
 

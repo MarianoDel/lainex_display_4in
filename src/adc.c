@@ -103,17 +103,19 @@ void AdcConfig (void)
     // ADC1->CR2 |= ADC_CR2_EXTTRIG;    // with external trigger (can be soft trigger)    
     
     //set sampling time for each channel
-    // AdcSetChannelSampleTime(ADC_Channel_0, ADC_SampleTime_239_5Cycles);
-    // AdcSetChannelSampleTime(ADC_Channel_1, ADC_SampleTime_239_5Cycles);
-    AdcSetChannelSampleTime(ADC_Channel_0, ADC_SampleTime_71_5Cycles);
-    AdcSetChannelSampleTime(ADC_Channel_1, ADC_SampleTime_71_5Cycles);
+    AdcSetChannelSampleTime(ADC_Channel_10, ADC_SampleTime_239_5Cycles);
+    AdcSetChannelSampleTime(ADC_Channel_11, ADC_SampleTime_239_5Cycles);
+    AdcSetChannelSampleTime(ADC_Channel_12, ADC_SampleTime_239_5Cycles);    
+    // AdcSetChannelSampleTime(ADC_Channel_0, ADC_SampleTime_71_5Cycles);
+    // AdcSetChannelSampleTime(ADC_Channel_1, ADC_SampleTime_71_5Cycles);
 
     //set regular channel selection, start with 1
-    AdcSetChannelSamplePosition(ADC_Channel_0, 1);
-    AdcSetChannelSamplePosition(ADC_Channel_1, 2);
+    AdcSetChannelSamplePosition(ADC_Channel_10, 1);
+    AdcSetChannelSamplePosition(ADC_Channel_11, 2);
+    AdcSetChannelSamplePosition(ADC_Channel_12, 3);    
 
     //set the quantity of channels to convert
-    AdcSetChannelsQuantity(ADC_Channels_Qtty_2);
+    AdcSetChannelsQuantity(ADC_Channels_Qtty_3);
     
 #ifdef ADC_WITH_INT        
     //set interrupts

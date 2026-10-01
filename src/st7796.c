@@ -5,8 +5,8 @@
 #include "spi.h"
 #include "gpio.h"
 #include "tim.h"
-// #include "main.h"
-// #include "stm32f4xx.h"
+#include "sst25.h"
+#include "usart.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -1182,5 +1182,161 @@ void ST7796_Draw_Image_By_Pixel (unsigned char * ptr, unsigned short xsize, unsi
 	    ILI9341_Draw_Pixel(i >> 1, j, pix);
 	}
     }
+}
+
+
+void ST7796_Draw_Image_Rgb565_Mem (unsigned char * ptr,
+				   unsigned short x1,
+				   unsigned short y1,
+				   unsigned short sizex,
+				   unsigned short sizey)
+{
+    // new
+    ST7796_Set_Address(x1, y1, x1 + sizex - 1, y1 + sizey - 1);
+    LCD_RS_DATA;
+    LCD_CS_ON;
+
+    unsigned char which_buff = 0;
+    unsigned char buff0[480 * 2];
+    unsigned char buff1[480 * 2];
+
+    for(uint32_t j = 0; j < sizey; j++)	
+    {
+
+	if (which_buff == 0)
+	    readBufNVM8u_Dma(buff0, sizex * 2, (unsigned int)(ptr + j * sizex * 2));
+	else
+	    readBufNVM8u_Dma(buff1, sizex * 2, (unsigned int)(ptr + j * sizex * 2));
+
+
+	// byte to byte	
+	// for(uint32_t i = 0; i < sizex * 2; i+=2)
+	// {
+	//     // get two bytes from each pixel
+	//     // rows index
+	//     unsigned int rindex = j * sizex * 2;
+	//     unsigned char data = 0;
+	    // buff0[i + 1] = readBufNVM8u(&data, 1, ptr + rindex + i + 0);
+	    // buff0[i + 0] = readBufNVM8u(&data, 1, ptr + rindex + i + 1);
+	// }
+	// end of byte to byte
+	
+	// SPI1_Send_Array((unsigned char*)buff0, sizex * 2);
+	while (!SPI1_DMA_Check_Free());
+	if (which_buff == 0)
+	{
+	    SPI1_DMA_Send_Array((unsigned char*)buff0, sizex * 2);
+	    which_buff = 1;
+	}
+	else
+	{
+	    SPI1_DMA_Send_Array((unsigned char*)buff1, sizex * 2);
+	    which_buff = 0;
+	}
+    }
+    while (!SPI1_DMA_Check_Free());
+    SPI1_DMA_Disable();
+    LCD_CS_OFF;
+}
+
+
+void ST7796_Draw_Image_Rgb565_Mem2 (unsigned char * ptr,
+				    unsigned short x1,
+				    unsigned short y1,
+				    unsigned short sizex,
+				    unsigned short sizey)
+{
+    // new
+    ST7796_Set_Address(x1, y1, x1 + sizex - 1, y1 + sizey - 1);
+    LCD_RS_DATA;
+    // LCD_CS_ON;
+
+    unsigned char buff0[480 * 2];
+
+    for(uint32_t j = 0; j < sizey; j++)	
+    {	
+	for(uint32_t i = 0; i < sizex * 2; i+=2)
+	{
+	    // get two bytes from each pixel
+	    // rows index
+	    unsigned int rindex = j * sizex * 2;
+	    unsigned char data = 0;
+	    readBufNVM8u(&data, 1, (unsigned int)(ptr + rindex + i + 0));
+	    buff0[i + 1] = data;
+	    readBufNVM8u(&data, 1, (unsigned int)(ptr + rindex + i + 1));
+	    buff0[i + 0] = data;
+	}
+	LCD_CS_ON;
+	SPI1_Send_Array((unsigned char*)buff0, sizex * 2);
+	LCD_CS_OFF;
+	// while (!SPI1_DMA_Check_Free());
+	// SPI1_DMA_Send_Array((unsigned char*)buff0, sizex * 2);
+    }
+    // while (!SPI1_DMA_Check_Free());
+    // SPI1_DMA_Disable();
+    LCD_CS_OFF;
+}
+
+
+void ST7796_Check_Image_Mem3 (unsigned char * pmem,
+			      unsigned char * pflash,
+			      unsigned short sizex,
+			      unsigned short sizey)
+{
+    // new
+    char my_buff [100] = { 0 };
+    unsigned char buff0[480 * 2];
+
+    Usart1Send("checking buffer from mem\r\n");
+    for(uint32_t j = 0; j < sizey; j++)	
+    {
+	readBufNVM8u_Dma(buff0, sizex * 2, (unsigned int)(pmem + j * sizex * 2));
+	// readBufNVM8u_Dma(buff0, sizex * 2, (0x1000 + j * sizex * 2));	
+	for(uint32_t i = 0; i < sizex * 2; i+=2)
+	{
+	    unsigned int rindex = j * sizex * 2;
+	    // if ((buff0[i + 1] != *(pflash + rindex + i + 0)) ||
+	    // 	(buff0[i + 0] != *(pflash + rindex + i + 1)))
+	    if ((buff0[i + 0] != *(pflash + rindex + i + 0)) ||
+		(buff0[i + 1] != *(pflash + rindex + i + 1)))
+	    {
+		sprintf(my_buff, "error on i: %d j: %d data: %d orig: %d\r\n", (int)i, (int)j,
+			buff0[i], *(pflash + rindex + i + 0));
+		Usart1Send(my_buff);
+		Wait_ms(100);
+	    }
+	}
+    }
+}
+
+
+void ST7796_Check_Mem4 (unsigned char * pmem,
+			unsigned char * pflash,
+			unsigned short size_cmp)
+{
+    // new
+    char my_buff [100] = { 0 };
+    unsigned char buff0[1024] = { 0 };
+
+    Usart1Send("get buffer with dma from mem at 0x1000\r\n");
+    readBufNVM8u_Dma(buff0, size_cmp, 0x1000);
+    Usart1Send("dma transfer done!\r\n");
+    
+
+    Usart1Send("check buffer\r\n");    
+    for(uint32_t i = 0; i < size_cmp; i++)
+    {
+	// sprintf(my_buff, "i: %d data: %d orig: %d\r\n", i, buff0[i], *(pflash + i));
+	// Usart1Send(my_buff);
+	// Wait_ms(100);
+	
+	if (buff0[i] != *(pflash + i))	
+	{
+	    sprintf(my_buff, "error on i: %d data: %d orig: %d\r\n", (int)i, buff0[i], *(pflash + i));
+	    Usart1Send(my_buff);
+	    Wait_ms(200);
+	}
+    }
+    Usart1Send("done!!!\r\n");
 }
 

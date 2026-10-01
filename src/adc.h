@@ -27,21 +27,12 @@
 #define SIZEOF_BOARD_TEMP		8
 #endif
 
-#ifdef HARDWARE_VERSION_2_0
-#define SENSE_POWER    adc_ch[0]
-#define SENSE_MEAS    adc_ch[1]
-#define ADC_CHANNEL_QUANTITY    2
-#define ADC_LAST_CHANNEL_QUANTITY    (ADC_CHANNEL_QUANTITY - 1)
-#endif
 
 #ifdef HARDWARE_VERSION_1_0
-#define SENSE_POWER    adc_ch[0]
-#define SENSE_MEAS    adc_ch[1]
-#define V_SENSE_25V    adc_ch[2]
-#define V_SENSE_8V    adc_ch[3]
-#define V_SENSE_11V    adc_ch[4]
-#define V_SENSE_28V    adc_ch[5]
-#define ADC_CHANNEL_QUANTITY    6
+#define Sense_Temp_1    adc_ch[0]
+#define Sense_Temp_2    adc_ch[1]
+#define Sense_Temp_3    adc_ch[2]
+#define ADC_CHANNEL_QUANTITY    3
 #define ADC_LAST_CHANNEL_QUANTITY    (ADC_CHANNEL_QUANTITY - 1)
 #endif
 //----------- End of ADC Configurations --------------//

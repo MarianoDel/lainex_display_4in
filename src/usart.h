@@ -22,6 +22,10 @@ unsigned char Usart1ReadBuffer (char *, unsigned short);
 unsigned char Usart1HaveData (void);
 void Usart1HaveDataReset (void);
 void USART1_IRQHandler (void);
+void Usart1ToBinary (unsigned char * pmem, unsigned short qtty);
+void Usart1ToText (void);
+unsigned short UsartIntPtrPos (void);
+
 
 void Usart2Config (void);
 void Usart2Send (char *);

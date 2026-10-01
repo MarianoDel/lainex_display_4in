@@ -19,9 +19,16 @@
 #include "tim.h"
 #include "gpio.h"
 #include "usart.h"
+#include "spi.h"
 
 #include "comms.h"
 #include "test_functions.h"
+#include "st7796.h"
+#include "sst25.h"
+#include "pictures.h"
+#include "temperatures.h"
+#include "manager.h"
+
 
 #include <stdio.h>
 #include <string.h>
@@ -39,10 +46,8 @@ volatile unsigned short wait_ms_var = 0;
 volatile unsigned short adc_ch [ADC_CHANNEL_QUANTITY];
 
 
-// Globals ---------------------------------------------------------------------
-// volatile unsigned short timer_sync_xxx_ms = 0;
-// volatile unsigned short timer_out4 = 0;
 
+// Globals ---------------------------------------------------------------------
 // parameters_typedef * pmem = (parameters_typedef *) (unsigned int *) FLASH_PAGE_FOR_BKP;	//en flash
 // parameters_typedef mem_conf;
 
@@ -51,7 +56,6 @@ volatile unsigned short adc_ch [ADC_CHANNEL_QUANTITY];
 void TimingDelay_Decrement(void);
 void SysTickError (void);
 
-// #define RPI_Flush_Comms (comms_messages_rpi &= ~COMM_RPI_ALL_MSG_MASK)
 
 
 // Module Functions ------------------------------------------------------------
@@ -65,58 +69,73 @@ int main (void)
         SysTickError();
 
     // Hardware Tests
-    TF_Hardware_Tests ();
+    // TF_Hardware_Tests ();
 
     // --- main program inits. ---
+    unsigned char buffer [3];
+    char my_str [100];
+    // init Mem and SPI2
+    Lcd_Backlight_Off();
+    
+    // SPI Init for Mem
+    Mem_Ce_Off();
+    Mem_Wp_Off();
+    SPI2_Config();
+    
+    // init Usart for debug and Management
+    Usart1Config();
+    Wait_ms(20);
+    Usart1Send("\r\n\nmemory jedec: ");
+    getJEDEC (buffer);
+    sprintf(my_str, "0x%02x 0x%02x 0x%02x\r\n",
+            buffer[0],
+            buffer[1],
+            buffer[2]);
+
+    // read first jedec to initialize memory
+    Usart1Send(my_str);
+    Wait_ms(200);
+
+    // Lcd Init
+    Lcd_Cs_Off();
+    SPI1_Config();
+    ST7796_Init3();
+    Wait_ms(200);
+    ST7796_Fill_Screen(BLACK);
+    Lcd_Backlight_On();
+    Usart1Send("Lcd inited\r\n");    
+
+    // show presentation
+    Wait_ms(200);
+    Usart1Send("showing presentation pictures\r\n");
+    Pictures_Init();
+
     // Init ADC with DMA    
     //-- DMA configuration.
-    DMAConfig();
-    DMA_ENABLE;
+    DMA1_Channel1_Config();
+    DMA1_CH1_ENABLE;
     
     //-- ADC with DMA
     AdcConfig();
     AdcStart();
 
-    //-- DAC init for signal generation
-    DAC_Config ();
-    DAC_Output1(1400);
-    DAC_Output2(0);    
-    
-    //-- Comms with main uc
-    Usart1Config ();
 
-    //-- Comms with probes
-    Usart3Config ();
-
-    //-- TIM1 for signals module sequence ready
-    TIM6_Init();
-    TIM7_Init();
-    
-    //-- Activate meas module
-    // Meas_Square_Init ();
-    // Meas_Module_Init ();
-
-    
     //-- Main Loop --------------------------
-    // while (1)
-    // {
+    while (1)
+    {
+        // update comms with main
+        Comms_Update ();
 
-    //     // update comms with main
-    //     Comms_Update ();
+        // the update of led and buzzer on Treatment_Manager()
+        // UpdateLed();
 
-    //     // update the probe comms
-    //     Probe_Comms_Update ();
+	// manager
+	Manager();
+	
+	// meas always running
+	Temp_Update ();
 
-    //     // update treatment state
-    //     Treatment_Manager();
-
-    //     // the update of led and buzzer on Treatment_Manager()
-    //     // UpdateLed();
-
-    // 	// meas always running
-    // 	Meas_Module_Update ();
-
-    // }
+    }
 }
 
 //--- End of Main ---//
@@ -131,14 +150,14 @@ void TimingDelay_Decrement(void)
     if (timer_standby)
         timer_standby--;
 
-    // Comms_Probe_Timeout ();
+    Comms_Timeouts ();
 
-    // Treatment_Timeouts ();
-    
-    HARD_Timeouts();
+    Hard_Timeouts ();
 
-    // Signals_Timeouts ();
-    
+    Temp_Timeouts ();
+
+    Manager_Timeouts ();    
+
 }
 
 

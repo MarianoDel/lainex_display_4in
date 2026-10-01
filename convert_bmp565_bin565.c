@@ -149,8 +149,8 @@ int main (int argc, char *argv[])
     printf("bytes read from file: %d\n", bytes_readed);
     fclose(image);
 
-    // create header file
-    image = fopen(argv[2], "w");
+    // create binary file
+    image = fopen(argv[2], "wb");
     if(!image)
     {
 	printf("Could not open the file %s.\n", argv[2]);
@@ -159,59 +159,23 @@ int main (int argc, char *argv[])
 	return 1;
     }
 
-    // file creation version
-    // char strbuff [100] = { 0 };
-    // fwrite ("const unsigned char p01 [] = {\n", 1, sizeof("const unsigned char p01 [] = {\n") - 1, image);
-    // for (unsigned int j = 0; j < imageHeader.biHeight; j++)
-    // {
-    // 	// rows
-    // 	for (unsigned int i = 0; i < rows_size; i++)
-    // 	{
-    // 	    sprintf(strbuff, "0x%02x,", *(buff565 + j * rows_size + i));
-    // 	    fwrite(strbuff, 1, strlen(strbuff), image);
-    // 	}
-    // 	fwrite("\n", 1, sizeof("\n") - 1, image);
-    // }
-    // fwrite("};\n", 1, sizeof("};\n") - 1, image);    
-    // fclose(image);
-    // free(buff565);
-    // end of file creation version
-
-    // file creation version with bytes swapped
+    // binary file creation version with bytes swapped
     char strbuff [100] = { 0 };
-    fwrite ("const unsigned char p01 [] = {\n", 1, sizeof("const unsigned char p01 [] = {\n") - 1, image);
     for (unsigned int j = 0; j < imageHeader.biHeight; j++)
     {
 	// rows
 	for (unsigned int i = 0; i < rows_size; i+=2)
 	{
-	    sprintf(strbuff, "0x%02x,0x%02x,",
-		    *(buff565 + j * rows_size + i + 1),
-		    *(buff565 + j * rows_size + i + 0));
-	    fwrite(strbuff, 1, strlen(strbuff), image);
+	    fwrite((buff565 + j * rows_size + i + 1), 1, 1, image);
+	    fwrite((buff565 + j * rows_size + i + 0), 1, 1, image);
 	}
-	fwrite("\n", 1, sizeof("\n") - 1, image);
     }
-    fwrite("};\n", 1, sizeof("};\n") - 1, image);    
+
+    printf("%s bin file created size: %d\n", argv[2], ftell(image));
     fclose(image);
     free(buff565);
     // end of file creation version with bytes swapped
     
-    // // console print version
-    // // printf("\n{\n");
-    // // // buff_mono filed
-    // // for (unsigned int j = 0; j < imageHeader.biHeight; j++)
-    // // {
-    // // 	// rows
-    // // 	for (unsigned int i = 0; i < width; i++)
-    // // 	{
-    // // 	    printf("0x%02x,", *(buff_mono + j * width + i));
-    // // 	}
-    // // 	printf("\n");
-    // // }
-    // // printf("}\n");
-    // // end of console print version
-
     return 0;
 }
 

@@ -1,15 +1,13 @@
 //---------------------------------------------
-// ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
-// ## @CPU:    STM32F103
 // ##
-// #### COMMS.H ###############################
+// #### PICTURES.H ###############################
 //---------------------------------------------
 
-#ifndef _COMMS_H_
-#define _COMMS_H_
+#ifndef _PICTURES_H_
+#define _PICTURES_H_
 
 //---- Includes to help the Defines ----------
 
@@ -19,8 +17,8 @@
 
 
 // Module Exported Functions ---------------------------------------------------
-void Comms_Timeouts (void);
-void Comms_Update (void);
+void Pictures_Init (void);
 
 
-#endif    /* _COMMS_H_ */
+
+#endif    /* _PICTURES_H_ */

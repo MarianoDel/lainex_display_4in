@@ -35,7 +35,11 @@ unsigned char SPI1_DMA_Check_Free (void);
 void SPI1_DMA_Disable (void);
 
 
-
+void SPI2_Config(void);
+void SPI2_Send_Single (unsigned char tosend);
+unsigned char SPI2_Receive_Single (void);
+unsigned char SPI2_DMA_Rx_Check_Free (void);
+void SPI2_DMA_Rx_Array (unsigned char * data, unsigned short size);
 
 
 #endif    /* _SPI_H_ */

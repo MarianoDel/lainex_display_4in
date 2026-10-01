@@ -32,6 +32,7 @@
 
 #elif (defined HSI_INTERNAL_RC)
 #if defined SYSCLK_FREQ_64MHz
+#define USART_PCKL2_115200    0x022B    // with RC internal
 #define USART_PCKL2_9600    0x1A0A    // with RC internal
 #define USART_PCKL1_9600    0x0D05    // with RC internal
 #elif defined SYSCLK_FREQ_8MHz
@@ -47,6 +48,7 @@
 #endif
 
 #define USART1_9600        USART_PCKL2_9600
+#define USART1_115200    USART_PCKL2_115200
 #define USART2_9600        USART_PCKL1_9600
 #define USART3_9600        USART_PCKL1_9600
 #define UART4_9600        USART_PCKL1_9600
@@ -83,9 +85,11 @@
 volatile unsigned char * ptx1;
 volatile unsigned char * ptx1_pckt_index;
 volatile unsigned char * prx1;
+volatile unsigned char * pchunk;
 volatile unsigned char tx1buff[SIZEOF_TXDATA];
 volatile unsigned char rx1buff[SIZEOF_RXDATA];
 volatile unsigned char usart1_have_data = 0;
+volatile unsigned short usart1_chunk_data = 0;
 
 //--- USART2 ---//
 volatile unsigned char * ptx2;
@@ -121,6 +125,13 @@ volatile unsigned char rx5buff[SIZEOF_RXDATA];
 volatile unsigned char uart5_have_data = 0;
 #endif
 
+// Module Private Functions ----------------------------------------------------
+void (* pUsartHandler) (unsigned char);
+void UsartIntTextHandler (unsigned char rx_data);
+void UsartIntBinaryHandler (unsigned char rx_data);
+
+
+
 // Module Functions ------------------------------------------------------------
 //---- USART1 Functions ----
 void Usart1Config(void)
@@ -134,18 +145,16 @@ void Usart1Config(void)
     ptx1_pckt_index = tx1buff;
     prx1 = rx1buff;
 
+    //Arranco con recepcion de texto
+    pUsartHandler = UsartIntTextHandler;
+    
     //---- Configuro velocidad y opciones del puerto
-    USART1->BRR = USART1_9600;
+    USART1->BRR = USART1_115200;
+    // USART1->BRR = USART1_9600;    
     // USART1->CR2 |= USART_CR2_STOP_1;	//2 bits stop
     // USART1->CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
     // USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE;	//SIN TX
     USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;	//para pruebas TX
-
-    //---- Configuro salidas alternativas ----
-    // temp = GPIOA->AFR[1];
-    // temp &= 0xFFFFF00F;
-    // temp |= 0x00000110;	//PA10 -> AF1 PA9 -> AF1
-    // GPIOA->AFR[1] = temp;
 
     //---- Habilito Int y prioridad ----
     NVIC_EnableIRQ(USART1_IRQn);
@@ -181,19 +190,17 @@ unsigned char Usart1ReadBuffer (char * bout, unsigned short max_len)
 
     if (len < max_len)
     {
-        //el prx1 siempre llega adelantado desde la int, lo corto con un 0
-        *prx1 = '\0';
-        prx1++;
+        *prx1 = '\0';    //buffer from int isnt ended with '\0' do it now
         len += 1;
-        memcpy(bout, (unsigned char *) rx1buff, len);
     }
     else
     {
-        memcpy(bout, (unsigned char *) rx1buff, len);
-        len = max_len;
+        len = max_len - 1;
     }
 
-    //ajusto punteros de rx luego de la copia
+    memcpy(bout, (unsigned char *) rx1buff, len);
+    
+    //pointer adjust after copy
     prx1 = rx1buff;
 
     return (unsigned char) len;
@@ -221,30 +228,7 @@ void USART1_IRQHandler (void)
     {
         dummy = USART1->DR & 0x0FF;
 
-        if (prx1 < &rx1buff[SIZEOF_RXDATA - 1])
-        {
-            //al /r no le doy bola
-            if (dummy == '\r')
-            {
-            }            
-            else if ((dummy == '\n') || (dummy == 26))		//26 es CTRL-Z
-            {
-                *prx1 = '\0';
-                usart1_have_data = 1;
-                // if (LED)
-                // 	LED_OFF;
-                // else
-                // 	LED_ON;
-
-            }
-            else
-            {
-                *prx1 = dummy;
-                prx1++;
-            }
-        }
-        else
-            prx1 = rx1buff;    //soluciona problema bloqueo con garbage
+        pUsartHandler(dummy);
     }
 
     /* USART in Transmit mode -------------------------------------------------*/
@@ -272,6 +256,81 @@ void USART1_IRQHandler (void)
         dummy = USART1->DR;
     }
 }
+
+
+//llamada desde la int decide que hacer con la que se recibe
+void UsartIntTextHandler (unsigned char rx_data)
+{
+    if (prx1 < &rx1buff[SIZEOF_RXDATA - 1])
+    {
+        //al /r no le doy bola
+        if (rx_data == '\r')
+        {
+        }
+        else if ((rx_data == '\n') || (rx_data == 26))    //26 es CTRL-Z
+        {
+            *prx1 = '\0';
+            usart1_have_data = 1;
+        }
+        else
+        {
+            *prx1 = rx_data;
+            prx1++;
+        }
+    }
+    else
+        prx1 = rx1buff;    //soluciona problema bloqueo con garbage
+}
+
+
+volatile unsigned short int_bytes = 0;
+void UsartIntBinaryHandler (unsigned char rx_data)
+{
+    if (prx1 < (pchunk + usart1_chunk_data))
+    {
+        *prx1 = rx_data;
+        prx1++;
+	int_bytes += 1;
+    }
+    else
+        prx1 = pchunk;    //soluciona problema bloqueo con garbage
+
+    if (prx1 >= (pchunk + usart1_chunk_data))
+    {
+	// char my_str [50];
+	// sprintf(my_str, "prx1: 0x%06x pchunk: 0x%06x chunk: %d\r\n", prx1, pchunk, usart1_chunk_data);
+	// Usart1Send(my_str);
+        usart1_have_data = 1;
+    }
+
+}
+
+
+unsigned short UsartIntPtrPos (void)
+{
+    unsigned short a = int_bytes;
+    int_bytes = 0;
+    return a;
+}
+
+
+void Usart1ToBinary (unsigned char * pmem, unsigned short qtty)
+{
+    prx1 = pmem;
+    pchunk = pmem;
+    usart1_have_data = 0;
+    usart1_chunk_data = qtty;
+    pUsartHandler = UsartIntBinaryHandler;
+}
+
+
+void Usart1ToText (void)
+{
+    prx1 = rx1buff;
+    usart1_have_data = 0;
+    pUsartHandler = UsartIntTextHandler;
+}
+
 
 //---- USART2 Functions ----
 void Usart2Config(void)

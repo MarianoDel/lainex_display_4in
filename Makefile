@@ -70,18 +70,21 @@ SRC += ./src/usart.c
 SRC += ./src/tim.c
 SRC += ./src/dma.c
 SRC += ./src/hard.c
-SRC += ./src/dac.c
+# SRC += ./src/dac.c
 SRC += ./src/spi.c
 
 SRC += ./src/dsp.c
-# SRC += ./src/comms.c
 SRC += ./src/utils.c
-# SRC += ./src/timer_signals.c
 SRC += ./src/test_functions.c
 
-# SRC += ./src/comms_probe.c
 # SRC += ./src/meas.c
 SRC += ./src/st7796.c
+SRC += ./src/sst25.c
+SRC += ./src/comms.c
+SRC += ./src/pictures.c
+SRC += ./src/temperatures.c
+SRC += ./src/manager.c
+
 
 # pictures for initial video
 SRC += ./src/lain_07.c
@@ -106,12 +109,20 @@ SRC += ./src/lain_91.c
 SRC += ./src/lain_94.c
 SRC += ./src/lain_98.c
 
+
 # pictures for cups
-SRC += ./src/t0.c
-SRC += ./src/t1.c
-SRC += ./src/t2.c
-SRC += ./src/t3.c
-SRC += ./src/t4.c
+# SRC += ./src/t0.c
+# SRC += ./src/t1.c
+# SRC += ./src/t2.c
+# SRC += ./src/t3.c
+# SRC += ./src/t4.c
+
+# pictures for cups
+# SRC += ./src/t0i.c
+# SRC += ./src/t1.c
+# SRC += ./src/t2.c
+# SRC += ./src/t3.c
+# SRC += ./src/t4.c
 
 # SRC += ./src/antennas.c
 # SRC += ./src/signals.c

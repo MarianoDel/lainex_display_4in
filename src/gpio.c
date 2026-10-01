@@ -98,23 +98,23 @@ void GpioInit (void)
         RCC_GPIOD_CLKEN;
 
     //--- GPIOA Low Side ------------------//
-    // PA0 Output LCD_RS
-    // PA1 Output LCD_RST
-    // PA2 NC
-    // PA3 NC
-    // PA4 Output LCD_CS
+    // PA0 NC
+    // PA1 Output #LCD_RST
+    // PA2 Output LCD_RS
+    // PA3 Output #LCD_CS
+    // PA4 NC
     // PA5 Alternative SPI1_SCK
     // PA6 Alternative SPI1_MISO
     // PA7 Alternative SPI1_MOSI
     temp = GPIOA->CRL;
-    temp &= 0x0000FF00;
-    temp |= 0xBBB10011;
+    temp &= 0x000F000F;
+    temp |= 0xBBB03330;
     GPIOA->CRL = temp;
 
     //--- GPIOA High Side ------------------//
     //PA8 NC
-    //PA9 alternative Tx Usart1
-    //PA10 alternative Rx Usart1
+    //PA9 Alternative Tx Usart1
+    //PA10 Alternative Rx Usart1
     //PA11 NC
     //PA12 NC
     //PA13 NC
@@ -132,67 +132,73 @@ void GpioInit (void)
     GPIOA->ODR = temp;
 
     //--- GPIOB Low Side -------------------//
-    //PB0 RIGHT_CH1 or alternative TIM8_CH2N
-    //PB1 RIGHT_PLATE_CH1 or alternative TIM8_CH3N
+    //PB0 Input pullup DET_AC3
+    //PB1 NC
     //PB2 NC
     //PB3 NC jtag on C8
     //PB4 NC jtag on C8
     //PB5 NC
     //PB6 NC
-    //PB7 NC
+    //PB7 CTP_RST
     temp = GPIOB->CRL;
-    temp &= 0xFFFFFF00;
-    temp |= 0x00000022;
+    temp &= 0xFFFFFFF0;
+    temp |= 0x00000008;
     GPIOB->CRL = temp;
 
     //--- GPIOB High Side -------------------//
     //PB8 NC
     //PB9 NC
-    //PB10 alternative Tx Usart3 open drain
-    //PB11 alternative Rx Usart3
-    //PB12 NC
-    //PB13 SYNC_IN_CH1 input pullup
-    //PB14 NC
-    //PB15 NC
+    //PB10 Alternative CTP_SCL
+    //PB11 Alternative CTP_SDA
+    //PB12 LED
+    //PB13 Alternative SPI2_SCK 
+    //PB14 Alternative SPI2_MISO
+    //PB15 Alternative SPI2_MOSI
     temp = GPIOB->CRH;
-    temp &= 0xFF0F00FF;
-    temp |= 0x00808F00;
+    temp &= 0x0000FFFF;
+    temp |= 0xBBB20000;
     GPIOB->CRH = temp;    
 
     //--- GPIOB Pull-Up Pull-Dwn ------------------//
-    temp = GPIOB->ODR;    //PB13 pull-up
-    temp &= 0xDFFF;
-    temp |= 0x2000;
+    temp = GPIOB->ODR;    //PB0 pullup
+    temp &= 0xFFFE;
+    temp |= 0x0001;
     GPIOB->ODR = temp;
     
     //--- GPIOC Low Side -------------------//
-    //PC0 LED1_CH1
-    //PC1 NC
-    //PC2 NC
+    //PC0 Analog Channel 10 TEMP_1
+    //PC1 Analog Channel 11 TEMP_2
+    //PC2 Analog Channel 12 TEMP_3
     //PC3 NC
-    //PC4 NC
-    //PC5 NC
-    //PC6 NC
-    //PC7 LEFT_CH1 or alternative TIM8_CH2
+    //PC4 input pullup DET_AC1
+    //PC5 input pullup DET_AC2
+    //PC6 output #CE
+    //PC7 output #WP
     temp = GPIOC->CRL;
-    temp &= 0x0FFFFFF0;
-    temp |= 0x20000002;
+    temp &= 0x0000F000;
+    temp |= 0x33880000;
     GPIOC->CRL = temp;
 
     //--- GPIOC High Side -------------------//
-    //PC8 LEFT_PLATE_CH1 or alternative TIM8_CH3
+    //PC8 NC
     //PC9 NC
-    //PC10 NC
+    //PC10 output #SD_CS
     //PC11 NC
-    //PC12 NC
+    //PC12 output BACKLIGHT
     //PC13 NC
     //PC14 NC    oscillator
     //PC15 NC    oscillator
     temp = GPIOC->CRH;   
-    temp &= 0xFFFFFFF0;
-    temp |= 0x00000002;
+    temp &= 0xFFF0F0FF;
+    temp |= 0x00030300;
     GPIOC->CRH = temp;
 
+    //--- GPIOC Pull-Up Pull-Dwn ------------------//
+    temp = GPIOC->ODR;    //PC5 PC4 pullup
+    temp &= 0xFFCF;
+    temp |= 0x0030;
+    GPIOC->ODR = temp;
+    
     //--- GPIOD Low Side -------------------//
     //PD0 NC
     //PD1 NC
